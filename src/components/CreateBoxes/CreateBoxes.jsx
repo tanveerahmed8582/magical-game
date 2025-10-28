@@ -5,6 +5,9 @@ const CreateBoxes = () => {
   const [gridSize, setGridSize] = useState("");
   const [error, setError] = useState(false);
   const [numbers, setNumbers] = useState([]);
+  const [flipped, setFlipped] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [matched, setMatched] = useState([]);
 
   const generateShuffledNumbers = (size) => {
     const totalBoxes = size * size;
@@ -34,6 +37,10 @@ const CreateBoxes = () => {
       setGridSize("");
       setError(false);
       setNumbers([]);
+      setFlipped([]);
+      setMatched([]);
+      setSelected([]);
+      return;
     }
     const num = Number(value);
     if (num >= 2 && num <= 8) {
@@ -41,10 +48,50 @@ const CreateBoxes = () => {
       setError(false);
       const newNumbers = generateShuffledNumbers(num);
       setNumbers(newNumbers);
+      setFlipped(Array(newNumbers.length).fill(false));
+      setMatched([]);
+      setSelected([]);
     } else {
       setError(true);
       setGridSize(value);
       setNumbers([]);
+      setFlipped([]);
+      setMatched([]);
+      setSelected([]);
+    }
+  };
+
+  const handleFlipped = (index) => {
+    //agar box already matched hai ignore click
+    if (matched.includes(index)) return;
+
+    //agar already flipped(visible) hai, ignore
+    if (flipped[index]) return;
+
+    const newFlipped = [...flipped];
+    newFlipped[index] = true;
+    setFlipped(newFlipped);
+
+    const newSelected = [...selected, index];
+    setSelected(newSelected);
+
+    //Agar 2 boxes select ho gaye
+    if (newSelected.length === 2) {
+      const [first, second] = newSelected;
+      if (numbers[first] === numbers[second]) {
+        //Match mila — dono open hi rahenge
+        setMatched((prev) => [...prev, first, second]);
+        setSelected([]);
+      } else {
+        //Match nahi — 1 sec baad hide kar do
+        setTimeout(() => {
+          const resetFlipped = [...newFlipped];
+          resetFlipped[first] = false;
+          resetFlipped[second] = false;
+          setFlipped(resetFlipped);
+          setSelected([]);
+        }, 800);
+      }
     }
   };
   return (
@@ -67,8 +114,15 @@ const CreateBoxes = () => {
       >
         {numbers.map((num, index) => {
           return (
-            <div className="box" key={index}>
-              {num}
+            <div
+              className={`box ${flipped[index] ? "flipped" : ""}`}
+              key={index}
+              onClick={() => handleFlipped(index)}
+            >
+              <div className="box-inner">
+                <div className="box-front"></div>
+                <div className="box-back">{num}</div>
+              </div>
             </div>
           );
         })}
