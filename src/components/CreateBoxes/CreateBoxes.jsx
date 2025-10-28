@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./Createboxes.css";
+import "./CreateBoxes.css";
 
 const CreateBoxes = () => {
   const [gridSize, setGridSize] = useState("");
