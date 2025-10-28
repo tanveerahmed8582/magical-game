@@ -8,6 +8,7 @@ const CreateBoxes = () => {
   const [flipped, setFlipped] = useState([]);
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
+  const [isWon, setIsWon] = useState(false);
 
   const generateShuffledNumbers = (size) => {
     const totalBoxes = size * size;
@@ -40,6 +41,7 @@ const CreateBoxes = () => {
       setFlipped([]);
       setMatched([]);
       setSelected([]);
+      setIsWon(false);
       return;
     }
     const num = Number(value);
@@ -51,6 +53,7 @@ const CreateBoxes = () => {
       setFlipped(Array(newNumbers.length).fill(false));
       setMatched([]);
       setSelected([]);
+      setIsWon(false);
     } else {
       setError(true);
       setGridSize(value);
@@ -58,6 +61,7 @@ const CreateBoxes = () => {
       setFlipped([]);
       setMatched([]);
       setSelected([]);
+      setIsWon(false);
     }
   };
 
@@ -80,7 +84,14 @@ const CreateBoxes = () => {
       const [first, second] = newSelected;
       if (numbers[first] === numbers[second]) {
         //Match mila — dono open hi rahenge
-        setMatched((prev) => [...prev, first, second]);
+        setMatched((prev) => {
+          const newMatched = [...prev, first, second];
+
+          if (newMatched.length === numbers.length) {
+            setIsWon(true);
+          }
+          return newMatched;
+        });
         setSelected([]);
       } else {
         //Match nahi — 1 sec baad hide kar do
@@ -127,6 +138,7 @@ const CreateBoxes = () => {
           );
         })}
       </div>
+      {isWon && <p className="win-text">🎉 You Won!! 🎉</p>}
     </>
   );
 };
