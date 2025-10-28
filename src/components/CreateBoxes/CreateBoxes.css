@@ -1,0 +1,70 @@
+.create-boxes-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-input {
+  width: 220px;
+  padding: 10px;
+  font-size: 1rem;
+  text-align: center;
+  border: 2px solid #999;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.grid-input:focus {
+  border-color: #4caf50;
+}
+
+/* ❌ Invalid Input */
+.grid-input.error {
+  border-color: red;
+  color: red;
+}
+
+/* ⚠️ Error Text */
+.error-text {
+  color: red;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* 🟩 Grid Container */
+.box-container {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.box {
+  background-color: #4caf50;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.box:hover {
+  transform: scale(1.05);
+  background-color: #45a049;
+}
+
+/* 📱 Responsive */
+@media (max-width: 600px) {
+  .box-container {
+    max-width: 300px;
+    gap: 8px;
+  }
+}
