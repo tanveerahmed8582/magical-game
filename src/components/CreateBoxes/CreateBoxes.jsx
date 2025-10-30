@@ -1,14 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./CreateBoxes.css";
 
-const CreateBoxes = () => {
+const CreateBoxes = ({ onAutoReset, isMuted }) => {
   const [gridSize, setGridSize] = useState("");
   const [error, setError] = useState(false);
   const [numbers, setNumbers] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
+  const [flipCounts, setFlipCounts] = useState([]);
   const [isWon, setIsWon] = useState(false);
+  const [isLost, setIsLost] = useState(false);
+  const [countDown, setCountDown] = useState(5);
+  const bgMusicRef = useRef(null);
+
+  useEffect(() => {
+    //music element create kar rhe hai.
+    bgMusicRef.current = new Audio("/music.mp3");
+    bgMusicRef.current.loop = true; //repeat music continuously
+
+    // Jab component mount ho aur game start ho — play music
+    bgMusicRef.current.play().catch(() => {
+      console.log("Autoplay blocked — will play after user interaction.");
+    });
+
+    // Cleanup: jab component unmount ho
+    return () => {
+      bgMusicRef.current.pause();
+      bgMusicRef.current.currentTime = 0;
+    };
+  }, []);
+
+  // Jab mute toggle ho to music pause/play karna hai
+  useEffect(() => {
+    if (!bgMusicRef.current) return;
+
+    if (isMuted) {
+      bgMusicRef.current.pause();
+    } else {
+      bgMusicRef.current.play().catch(() => {});
+    }
+  }, [isMuted]);
+
+  //Jab game win ya lose ho jaye — stop music
+  useEffect(() => {
+    if (isWon || isLost) {
+      bgMusicRef.current.pause();
+      const endSound = new Audio(isWon ? "/gameover.wav" : "/gameover.wav");
+      endSound.volume = 0.7;
+      endSound.play();
+    }
+  }, [isWon, isLost, isMuted]);
 
   const generateShuffledNumbers = (size) => {
     const totalBoxes = size * size;
@@ -28,10 +70,6 @@ const CreateBoxes = () => {
     return pairedNumbers;
   };
 
-  // const boxes = !error
-  //   ? Array.from({ length: gridSize ? gridSize * gridSize : 0 })
-  //   : [];
-
   const handleChange = (e) => {
     const value = e.target.value;
     if (value === "") {
@@ -42,6 +80,8 @@ const CreateBoxes = () => {
       setMatched([]);
       setSelected([]);
       setIsWon(false);
+      setIsLost(false);
+      setFlipCounts([]);
       return;
     }
     const num = Number(value);
@@ -54,6 +94,8 @@ const CreateBoxes = () => {
       setMatched([]);
       setSelected([]);
       setIsWon(false);
+      setIsLost(false);
+      setFlipCounts(Array(newNumbers.length).fill(0));
     } else {
       setError(true);
       setGridSize(value);
@@ -62,15 +104,40 @@ const CreateBoxes = () => {
       setMatched([]);
       setSelected([]);
       setIsWon(false);
+      setIsLost(false);
+      setFlipCounts([]);
+    }
+
+    if (bgMusicRef.current) {
+      bgMusicRef.current.play();
     }
   };
 
   const handleFlipped = (index) => {
+    if (isWon || isLost) return; //stop if game already over.
+
     //agar box already matched hai ignore click
     if (matched.includes(index)) return;
 
     //agar already flipped(visible) hai, ignore
     if (flipped[index]) return;
+
+    // agar box ka flip count 4 ho gaya, toh game over
+    if (flipCounts[index] >= 5) {
+      setIsLost(true);
+      return;
+    }
+
+    //Play flip sound
+    if (!isMuted) {
+      const sound = new Audio("/turn.wav");
+      sound.play();
+    }
+
+    //flip count badhao
+    const newFlipCounts = [...flipCounts];
+    newFlipCounts[index] += 1;
+    setFlipCounts(newFlipCounts);
 
     const newFlipped = [...flipped];
     newFlipped[index] = true;
@@ -83,6 +150,12 @@ const CreateBoxes = () => {
     if (newSelected.length === 2) {
       const [first, second] = newSelected;
       if (numbers[first] === numbers[second]) {
+        // ✅ Yaha sound play karenge
+        if (!isMuted) {
+          const matchAudio = new Audio("/matched.wav");
+          matchAudio.play();
+        }
+
         //Match mila — dono open hi rahenge
         setMatched((prev) => {
           const newMatched = [...prev, first, second];
@@ -104,7 +177,35 @@ const CreateBoxes = () => {
         }, 800);
       }
     }
+    // agar kisi box ka count 4 se zyada ho gaya → game over
+    if (newFlipCounts[index] >= 5) {
+      setIsLost(true);
+    }
   };
+
+  useEffect(() => {
+    if (isWon || isLost) {
+      setCountDown(5);
+
+      let countDown = 5;
+      const interval = setInterval(() => {
+        countDown -= 1;
+        setCountDown(countDown);
+        if (countDown <= 0) clearInterval(interval);
+      }, 1000);
+
+      const timer = setTimeout(() => {
+        clearInterval(interval);
+        onAutoReset();
+      }, 5000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timer);
+      };
+    }
+  }, [isWon, isLost]);
+
   return (
     <>
       <input
@@ -114,11 +215,11 @@ const CreateBoxes = () => {
         min={2}
         value={gridSize}
         onChange={handleChange}
-        placeholder="Entre grid size (2-8)"
+        placeholder="Enter grid size (2-8)"
       />
       {error && <p className="error-text">Please enter number between 2-8</p>}
       <div
-        className="box-container"
+        className={`box-container ${isWon || isLost ? "disabled" : ""}`}
         style={{
           gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
         }}
@@ -131,14 +232,25 @@ const CreateBoxes = () => {
               onClick={() => handleFlipped(index)}
             >
               <div className="box-inner">
-                <div className="box-front"></div>
+                <div className="box-front">
+                  <span className="flip-counter">{flipCounts[index]}</span>
+                </div>
                 <div className="box-back">{num}</div>
               </div>
             </div>
           );
         })}
       </div>
-      {isWon && <p className="win-text">🎉 You Won!! 🎉</p>}
+      {(isWon || isLost) && (
+        <div className="overlay-message">
+          <p className={isWon ? "win-text" : "lose-text"}>
+            {isWon ? "🎉 You Won!! 🎉" : "💀 You Lost!! 💀"}
+          </p>
+          <p className="restart-text">
+            Restarting in {countDown} second{countDown !== 1 ? "s" : ""}...
+          </p>
+        </div>
+      )}
     </>
   );
 };

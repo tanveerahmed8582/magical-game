@@ -36,6 +36,7 @@ html {
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease-in-out;
+  position: relative;
 }
 
 /* Responsive tweaks */
@@ -60,3 +61,22 @@ html {
     padding: 8px 20px !important;
   }
 }
+
+/* 🔊 Volume Icon Styling */
+.volume-icon {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  z-index: 100; /* ensures above all other elements */
+}
+
+.volume-icon:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 1);
+}
+
